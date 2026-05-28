@@ -1,0 +1,3 @@
+display_name: KiCAD Schematic Review
+short_description: Review KiCAD schematics with component datasheet links, IC checks, and checklist reports.
+default_prompt: Review this KiCAD schematic project using the Datasheet links in component fields and my checklist, then write a markdown feedback report.
