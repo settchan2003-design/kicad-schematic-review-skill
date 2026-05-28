@@ -1,6 +1,6 @@
 # KiCad Schematic Review Skill
 
-This Codex skill helps review KiCad schematics with a disciplined, evidence-first workflow:
+This ChatGPT / OpenAI Codex skill helps review KiCad schematics with a disciplined, evidence-first workflow:
 
 - inventory a KiCad project
 - extract structured schematic facts from `.kicad_sch`
@@ -10,6 +10,10 @@ This Codex skill helps review KiCad schematics with a disciplined, evidence-firs
 - generate Markdown review reports with explicit confidence and limitations
 
 The current focus is schematic review. PCB layout review is intentionally out of scope for this skill version.
+
+Recommended repository name: `kicad-schematic-review-skill`.
+
+The requested display name can still be **KiCAD Schematic Review Skill** in GitHub's repository description. Using a lowercase hyphenated repository name avoids spaces and typos in clone/install URLs.
 
 ## What It Checks
 
@@ -31,6 +35,26 @@ python -m pip install -r requirements.txt
 ```
 
 `pypdf` is used for PDF datasheet text extraction. If you already have `pdftotext` installed, the datasheet helper can also use that as a fallback.
+
+## Use With ChatGPT / Codex
+
+This repository is designed to be used as a local skill directory for AI coding agents such as OpenAI Codex.
+
+For Codex-style usage:
+
+1. Place this folder in your local skills/plugin workspace.
+2. Ask the agent to use `kicad-schematic-review` when reviewing a KiCad schematic.
+3. Provide the KiCad project path and, when available, expected load current, supply voltage, checklist requirements, and known design intent.
+4. The agent should follow `SKILL.md`, use the scripts in `scripts/`, and write Markdown review artifacts into the target project's `review_outputs/` directory.
+
+Example prompt:
+
+```text
+Use the kicad-schematic-review skill to review this KiCad project.
+Focus on schematic review only. Check motor driver wiring, connector current rating,
+required datasheet external parts, and any missing manual-review evidence.
+Project path: /path/to/project
+```
 
 ## Quick Start
 
@@ -92,6 +116,10 @@ scripts/datasheet_tool.py        Datasheet fetch/extract/keyword helper
 references/                      Review templates and workflow notes
 agents/openai.yaml               Optional agent config
 ```
+
+## License
+
+MIT. See `LICENSE`.
 
 ## 中文说明
 
