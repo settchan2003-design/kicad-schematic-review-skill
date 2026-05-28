@@ -71,7 +71,7 @@ Minimum bar for an actual review:
 5. Create or update `datasheet_cache/<part>.summary.md`.
    - Use `references/datasheet_summary_template.md`.
    - If the project has a local `.venv`, prefer `.venv/bin/python` when running datasheet tools so PDF parsing dependencies are available.
-   - Use `scripts/datasheet_tool.py fetch <datasheet-url-or-path> --cache-dir <project>/datasheet_cache` to cache URL-based datasheets when needed.
+   - Use `scripts/datasheet_tool.py fetch <datasheet-url-or-path> --cache-dir <project>/datasheet_cache` to cache URL-based datasheets when needed. The fetch command reuses cached files first; add `--offline` to fail instead of downloading on a cache miss, or `--verbose` to show cache-hit/download status on stderr.
    - Use `scripts/datasheet_tool.py extract <cached-pdf-or-local-file> --out <project>/datasheet_cache/<part>.datasheet.txt` to produce searchable text when a PDF text extractor is available.
    - Use `scripts/datasheet_tool.py keywords <text-file> --out <project>/datasheet_cache/<part>.keywords.md` to create a compact reading map before summarizing.
    - This file is the datasheet-side design contract.

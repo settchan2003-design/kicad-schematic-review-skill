@@ -66,25 +66,46 @@ def safe_name(source: str) -> str:
     return f"{Path(stem).stem}_{digest}{Path(stem).suffix or '.pdf'}"
 
 
-def fetch(source: str, cache_dir: Path, insecure: bool = False) -> Path:
+def _log(message: str, verbose: bool) -> None:
+    if verbose:
+        print(message, file=sys.stderr)
+
+
+def fetch(
+    source: str,
+    cache_dir: Path,
+    insecure: bool = False,
+    offline: bool = False,
+    verbose: bool = False,
+) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     parsed = urllib.parse.urlparse(source)
     if parsed.scheme in {"http", "https"}:
         target = cache_dir / safe_name(source)
         if target.exists() and target.stat().st_size > 0:
+            _log(f"cache hit: {target}", verbose)
             return target
+        if offline:
+            raise FileNotFoundError(f"Datasheet is not in cache and --offline was set: {source}")
+        _log(f"downloading: {source}", verbose)
         request = urllib.request.Request(source, headers={"User-Agent": "kicad-schematic-review/1.0"})
         context = ssl._create_unverified_context() if insecure else None
         with urllib.request.urlopen(request, timeout=30, context=context) as response:
             target.write_bytes(response.read())
+        _log(f"cached: {target}", verbose)
         return target
 
     path = Path(source).expanduser()
+    target = cache_dir / safe_name(str(path.resolve()))
+    if target.exists() and target.stat().st_size > 0:
+        _log(f"cache hit: {target}", verbose)
+        return target
     if not path.exists():
         raise FileNotFoundError(f"Datasheet path does not exist: {source}")
-    target = cache_dir / safe_name(str(path.resolve()))
     if path.resolve() != target.resolve():
+        _log(f"copying local datasheet: {path}", verbose)
         shutil.copyfile(path, target)
+        _log(f"cached: {target}", verbose)
     return target
 
 
@@ -165,7 +186,13 @@ def keyword_sections(text: str, keywords: list[str], context_chars: int) -> str:
 
 
 def command_fetch(args: argparse.Namespace) -> None:
-    target = fetch(args.source, args.cache_dir, insecure=args.insecure)
+    target = fetch(
+        args.source,
+        args.cache_dir,
+        insecure=args.insecure,
+        offline=args.offline,
+        verbose=args.verbose,
+    )
     print(target)
 
 
@@ -202,6 +229,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--insecure",
         action="store_true",
         help="Skip TLS certificate verification when the local certificate store is broken",
+    )
+    fetch_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Only use an existing cached datasheet; fail instead of downloading on a cache miss",
+    )
+    fetch_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print cache-hit/download details to stderr while keeping stdout as the cached path",
     )
     fetch_parser.set_defaults(func=command_fetch)
 
