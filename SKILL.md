@@ -112,6 +112,7 @@ Minimum bar for an actual review:
 
 9. Create one review file per IC or current-critical instance in `review_outputs/`.
    - Use `references/ic_review_template.md`.
+   - Use `references/power_path_review_template.md` for connector, terminal, fuse, shunt, motor/load, and other current-path reviews.
    - Compare expected datasheet requirements against actual schematic connections pin by pin.
    - Keep required external component checks separate from pin-net checks.
    - One datasheet summary may be reused by multiple IC instances, but each instance gets its own review file.
