@@ -13,11 +13,12 @@ Do not review a large board by loading every schematic and datasheet at once. Wo
 
 1. Inventory the KiCAD project.
 2. Extract structured schematic facts: components, pins, nets, labels, no-connects, and datasheet fields.
-3. Spot-check critical extracted facts against the raw `.kicad_sch` before making high-confidence claims.
-4. Identify ICs, regulators, connectors, and current-carrying parts with `Datasheet` links.
-5. Build one reusable datasheet summary per part/package.
-6. Review one schematic IC or current-critical instance at a time.
-7. Merge per-instance findings into a final report with explicit confidence and review gaps.
+3. Build compact review context, including schematic free-text annotations and applicable checklists.
+4. Spot-check critical extracted facts against the raw `.kicad_sch` before making high-confidence claims.
+5. Identify ICs, regulators, connectors, and current-carrying parts with `Datasheet` links.
+6. Build one reusable datasheet summary per part/package.
+7. Review one schematic IC or current-critical instance at a time.
+8. Merge per-instance findings into a final report with explicit confidence and review gaps.
 
 ## Schematic Review Contract
 
@@ -27,6 +28,8 @@ Minimum bar for an actual review:
 
 - Run `inventory_project.py`.
 - Run `extract_kicad_sch.py` on every `.kicad_sch` that contains design content.
+- Run `build_review_context.py` and read the `checklists` and `schematic_texts` sections before selecting review scope.
+- Apply every checklist returned with `applies: true`; cite checklist evidence separately from datasheet evidence.
 - Confirm component count and the reviewed IC pin maps against raw schematic snippets for critical parts.
 - Check every IC/regulator/driver supply pin, ground pin, enable/reset/boot/mode pin, output/load pin, sense/reference pin, and exposed pad.
 - Check required external parts from the datasheet: decoupling, bulk capacitance, bootstrap/charge-pump capacitors, sense resistors, pull-ups/downs, snubbers, TVS/ESD, clocks/crystals, and configuration networks.
@@ -62,17 +65,29 @@ Minimum bar for an actual review:
    - Always include motor drivers, regulators, MCUs, sensors, level shifters, communication transceivers, ADC/DACs, protection ICs, and power-management ICs.
    - Also identify current-critical non-IC parts: connectors, terminal blocks, fuses, switches, shunts, load resistors, motors/loads, cables, and protection parts.
 
-4. Resolve datasheet source.
+4. Build review context and load applicable checklists.
+   - Run `scripts/build_review_context.py <project> --pretty`.
+   - Read `schematic_texts[]`; treat power/current annotations such as `30W`, `2A`, `24V`, `motor`, or `heater` as design-intent evidence that must be cross-checked.
+   - Read `checklists[]` and load every file with `applies: true`.
+   - The baseline checklist is `references/checklist_example.md`.
+   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, and `dcdc.md`.
+   - Project-local checklists named `review_checklist.md`, `schematic_checklist.md`, `hardware_checklist.md`, `checklist.md`, or `*checklist*.md` are discovered automatically by `build_review_context.py`.
+   - If project-local checklist items conflict with the baseline or domain checklist, apply the stricter requirement unless the user explicitly says otherwise.
+   - Preserve checklist pass/fail/manual-review results in the per-instance review files and final report.
+
+5. Resolve datasheet source.
    - Prefer the component `Datasheet` property.
    - Accept HTTP(S) URLs, absolute paths, and project-relative paths.
    - If missing, inspect custom fields such as `MPN`, `Manufacturer Part Number`, `Part Number`, `LCSC`, `Supplier Part`, and `URL`.
    - If still missing, mark as `manual_review`.
 
-5. Create or update `datasheet_cache/<part>.summary.md`.
+6. Create or update `datasheet_cache/<part>.summary.md`.
    - Use `references/datasheet_summary_template.md`.
    - If the project has a local `.venv`, prefer `.venv/bin/python` when running datasheet tools so PDF parsing dependencies are available.
    - Use `scripts/datasheet_tool.py fetch <datasheet-url-or-path> --cache-dir <project>/datasheet_cache` to cache URL-based datasheets when needed. The fetch command reuses cached files first; add `--offline` to fail instead of downloading on a cache miss, or `--verbose` to show cache-hit/download status on stderr.
+   - If a supplier datasheet URL caches an HTML wrapper instead of a PDF, rerun fetch without `--offline`; the tool attempts to resolve linked/canonical PDF URLs and returns the resolved PDF path when found.
    - Use `scripts/datasheet_tool.py extract <cached-pdf-or-local-file> --out <project>/datasheet_cache/<part>.datasheet.txt` to produce searchable text when a PDF text extractor is available.
+   - If the cached file is HTML, `extract` produces readable HTML text; use it only as supplier-page evidence unless it contains real rating tables or links to the actual PDF/drawing.
    - Use `scripts/datasheet_tool.py keywords <text-file> --out <project>/datasheet_cache/<part>.keywords.md` to create a compact reading map before summarizing.
    - This file is the datasheet-side design contract.
    - Expand every physical pin for the reviewed package.
@@ -83,19 +98,19 @@ Minimum bar for an actual review:
    - Mark the summary status as `verified` only after pin table, recommended operating conditions, application circuit, and package-specific notes were checked.
    - If the datasheet text extraction is weak or missing tables, mark affected fields as `needs-human-check`.
 
-6. Perform raw schematic spot-checks before instance reviews.
+7. Perform raw schematic spot-checks before instance reviews.
    - For every high-severity finding candidate, open the raw `.kicad_sch` around the affected symbol/label/wire and confirm the extracted connection.
    - For every reviewed IC, verify at least power pins, ground pins, output pins, sense/reference pins, and any suspicious unnamed nets.
    - If extracted pin positions or net names conflict with visual/raw evidence, trust the raw schematic and describe the parser issue.
 
-7. Review current-carrying paths before final sign-off.
+8. Review current-carrying paths before final sign-off.
    - Identify power entry, motor outputs, load connectors, fuses, switches, sense resistors, and terminal blocks.
    - Estimate current from known or user-provided power: `I = P / V`, then add efficiency and transient/startup margin when relevant.
    - Compare estimated continuous and peak current against connector/contact/wire/fuse/resistor ratings.
    - Flag any path with no derating margin, unknown rating, or rating below expected current.
    - For motor outputs, consider current limit and startup/stall current, not only average electrical power.
 
-8. Create one review file per IC or current-critical instance in `review_outputs/`.
+9. Create one review file per IC or current-critical instance in `review_outputs/`.
    - Use `references/ic_review_template.md`.
    - Compare expected datasheet requirements against actual schematic connections pin by pin.
    - Keep required external component checks separate from pin-net checks.
@@ -103,7 +118,7 @@ Minimum bar for an actual review:
    - Include a confidence value for each finding: high, medium, or low.
    - Include evidence source for each finding: extracted JSON, raw schematic, datasheet summary, direct datasheet page/section, or user checklist.
 
-9. Generate the final report.
+10. Generate the final report.
    - Use `references/report_template.md`.
    - Lead with high-severity findings.
    - Include checklist status, per-IC summary, manual-review questions, and parser limitations.
@@ -119,6 +134,7 @@ Minimum bar for an actual review:
 ## Context Rules
 
 - Load only one IC datasheet context at a time.
+- Load only applicable checklist files returned by `build_review_context.py`; do not bulk-load unrelated reference files.
 - Cache datasheet knowledge in `datasheet_cache/`.
 - Cache instance findings in `review_outputs/`.
 - When context is tight, keep only current IC facts, its datasheet summary, relevant checklist items, and active findings.
@@ -139,6 +155,7 @@ Minimum bar for an actual review:
 
 - Always check connector and terminal current rating when a net name or checklist implies supply, motor, heater, actuator, battery, or other power path.
 - If output/load power is known, compute input/load current and compare with connector rating.
+- If schematic text annotations contain load power or current, use them as review evidence and cite the text location/source from `schematic_texts`.
 - If power is not known but a motor driver, regulator, fuse, or terminal is present, ask for expected continuous/peak load current and still report missing rating evidence as `manual_review`.
 - Treat average current, startup/stall current, RMS current, temperature rise, wire gauge, and number of contacts used in parallel as separate concerns.
 - Use at least a warning when estimated current exceeds 70% of a connector/contact rating unless the checklist specifies another derating rule.

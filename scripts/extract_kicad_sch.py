@@ -316,6 +316,11 @@ def extract(path: Path) -> dict[str, Any]:
     junctions = [point for point in junctions if point]
     no_connects = [point_from(nc, "at") for nc in children(root, "no_connect")]
     no_connects = [point for point in no_connects if point]
+    schematic_texts = []
+    for text_node in children(root, "text"):
+        at = point_from(text_node, "at")
+        if len(text_node) > 1 and isinstance(text_node[1], str):
+            schematic_texts.append({"text": text_node[1], "position": at})
 
     union = UnionFind()
     points_with_names: list[tuple[tuple[int, int], str]] = []
@@ -417,6 +422,7 @@ def extract(path: Path) -> dict[str, Any]:
         "components": components,
         "nets": sorted(nets_by_root.values(), key=lambda item: item["name"]),
         "labels": labels,
+        "texts": schematic_texts,
         "wires": wires,
         "junctions": junctions,
         "no_connects": no_connects,

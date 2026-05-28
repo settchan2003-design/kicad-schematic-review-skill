@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -68,10 +69,112 @@ def is_current_critical_candidate(component: dict[str, Any]) -> bool:
     return any(keyword in text for keyword in current_keywords)
 
 
+def parse_checklist_items(path: Path) -> list[str]:
+    items: list[str] = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = re.match(r"^\s*-\s+(?:\[[ xX]\]\s*)?(.+?)\s*$", line)
+        if match and match.group(1):
+            items.append(match.group(1))
+    return items
+
+
+def discover_project_checklists(project_root: Path) -> list[Path]:
+    candidates: list[Path] = []
+    names = [
+        "review_checklist.md",
+        "schematic_checklist.md",
+        "checklist.md",
+        "hardware_checklist.md",
+    ]
+    for name in names:
+        path = project_root / name
+        if path.exists():
+            candidates.append(path)
+    for path in sorted(project_root.glob("*checklist*.md")):
+        if path not in candidates:
+            candidates.append(path)
+    return candidates
+
+
+def checklist_entry(path: Path, source: str, applies: bool, reason: str) -> dict[str, Any]:
+    items = parse_checklist_items(path)
+    return {
+        "path": str(path),
+        "source": source,
+        "applies": applies,
+        "reason": reason,
+        "item_count": len(items),
+        "items": items,
+    }
+
+
+def discover_checklists(
+    project_root: Path,
+    components: list[dict[str, Any]],
+    named_nets: list[dict[str, Any]],
+    schematic_texts: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    skill_root = SCRIPT_DIR.parent
+    references = skill_root / "references"
+    text_blob = " ".join(
+        [
+            " ".join(str(component.get(key, "")) for key in ["reference", "lib_id", "value", "description"])
+            for component in components
+        ]
+        + [str(net.get("name", "")) for net in named_nets]
+        + [str(item.get("text", "")) for item in schematic_texts]
+    ).lower()
+
+    checklists: list[dict[str, Any]] = []
+    core = references / "checklist_example.md"
+    if core.exists():
+        checklists.append(
+            checklist_entry(
+                core,
+                "skill_core",
+                True,
+                "Baseline schematic review checklist; always apply unless a project checklist supersedes an item.",
+            )
+        )
+
+    domain_rules = [
+        (
+            references / "checklists" / "motor_driver.md",
+            ["motor", "drv", "h-bridge", "bridge", "driver_motor"],
+            "Motor-driver, H-bridge, or motor-load evidence found.",
+        ),
+        (
+            references / "checklists" / "connector_power.md",
+            ["connector", "terminal", "jst", "wj", "24v", "12v", "vin", "vbus", "motor"],
+            "Connector, terminal, supply rail, or load-current evidence found.",
+        ),
+        (
+            references / "checklists" / "dcdc.md",
+            ["dcdc", "dc-dc", "buck", "boost", "converter", "regulator", "switching"],
+            "Switching regulator or DCDC evidence found.",
+        ),
+    ]
+    for path, keywords, reason in domain_rules:
+        if path.exists() and any(keyword in text_blob for keyword in keywords):
+            checklists.append(checklist_entry(path, "skill_domain", True, reason))
+
+    for path in discover_project_checklists(project_root):
+        checklists.append(
+            checklist_entry(
+                path,
+                "project",
+                True,
+                "Project-local checklist discovered by filename.",
+            )
+        )
+    return checklists
+
+
 def build_context(project: Path) -> dict[str, Any]:
     inventory = discover(project)
     schematics = []
     components = []
+    schematic_texts = []
 
     for schematic in inventory["schematic_files"]:
         extracted = extract(Path(schematic))
@@ -86,6 +189,10 @@ def build_context(project: Path) -> dict[str, Any]:
             item = dict(component)
             item["schematic_file"] = schematic
             components.append(item)
+        for text_item in extracted.get("texts", []):
+            item = dict(text_item)
+            item["schematic_file"] = schematic
+            schematic_texts.append(item)
 
     ic_candidates = [component for component in components if is_ic_candidate(component)]
     current_critical_candidates = [
@@ -126,6 +233,12 @@ def build_context(project: Path) -> dict[str, Any]:
         for component in components
         if component.get("datasheet")
     ]
+    checklists = discover_checklists(
+        Path(inventory["project_root"]),
+        components,
+        named_nets,
+        schematic_texts,
+    )
 
     return {
         "project_root": inventory["project_root"],
@@ -134,6 +247,8 @@ def build_context(project: Path) -> dict[str, Any]:
         "ic_candidates": ic_candidates,
         "current_critical_candidates": current_critical_candidates,
         "named_nets": named_nets,
+        "schematic_texts": schematic_texts,
+        "checklists": checklists,
         "datasheet_links": datasheet_links,
         "suggested_output_dirs": inventory["suggested_output_dirs"],
     }
