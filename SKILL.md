@@ -70,7 +70,7 @@ Minimum bar for an actual review:
    - Read `schematic_texts[]`; treat power/current annotations such as `30W`, `2A`, `24V`, `motor`, or `heater` as design-intent evidence that must be cross-checked.
    - Read `checklists[]` and load every file with `applies: true`.
    - The baseline checklist is `references/checklist_example.md`.
-   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `half_bridge_gate_drive.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
+   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `dcdc_bringup_test.md`, `half_bridge_gate_drive.md`, `current_sensing.md`, `motor_control_foc.md`, `signal_power_integrity.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
    - Project-local checklists named `review_checklist.md`, `schematic_checklist.md`, `hardware_checklist.md`, `checklist.md`, or `*checklist*.md` are discovered automatically by `build_review_context.py`.
    - If project-local checklist items conflict with the baseline or domain checklist, apply the stricter requirement unless the user explicitly says otherwise.
    - Preserve checklist pass/fail/manual-review results in the per-instance review files and final report.

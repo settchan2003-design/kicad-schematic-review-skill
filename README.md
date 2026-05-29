@@ -35,6 +35,10 @@ For example, if a schematic contains the free-text annotation `30W DC-Motor` and
 - Motor drivers and H-bridges: VM capacitance, current limit, sense resistor power, PowerPAD requirements, and motor output connectors
 - Half bridges and external power stages: gate-drive supply, bootstrap network, gate resistors, pulldowns, Miller/crosstalk risks, dead time, and VGS limits
 - DCDC converters: input/output capacitors, inductors, feedback dividers, compensation, BOOT/SW/EN/PGOOD pins, COT ripple-generation requirements, and layout-sensitive feedback/SW nodes
+- DCDC bring-up: ripple, efficiency, load-step, line/load regulation, short-circuit recovery, SW-node stress, and measurement setup
+- Current sensing: shunt value/power, high-side/low-side/phase topology, CSA common-mode limits, ADC mapping, Kelvin routing, and PWM rejection
+- Motor control and FOC: phase order, current sampling windows, dead time, encoder/resolver/Hall feedback, bus-voltage sensing, calibration, and safe fault behavior
+- Signal and power integrity: return paths, termination, differential interfaces, decoupling, PDN assumptions, probing, and EMI-sensitive layout risks
 - Connectors and terminals: current, wire gauge, temperature, paralleled contacts, supply path, and return path
 - Power entry and inrush: battery/DC-bus inputs, relays/SSRs, precharge, large downstream capacitance, fuses, and hot-swap behavior
 - MCU/ADC basics: decoupling, VCAP/reference pins, reset/boot states, ADC source impedance, RC settling, anti-alias filtering, and test access
@@ -147,9 +151,14 @@ references/checklist_example.md           Baseline checklist
 references/checklists/motor_driver.md     Motor-driver checklist
 references/checklists/connector_power.md  Connector and power-path checklist
 references/checklists/dcdc.md             DCDC checklist
+references/checklists/dcdc_bringup_test.md       DCDC bring-up and test checklist
 references/checklists/half_bridge_gate_drive.md  Half-bridge and gate-drive checklist
+references/checklists/current_sensing.md         Current-sensing checklist
+references/checklists/motor_control_foc.md       Motor-control and FOC checklist
+references/checklists/signal_power_integrity.md  Signal and power integrity checklist
 references/checklists/power_entry_inrush.md      Power-entry, inrush, and precharge checklist
 references/checklists/mcu_adc.md                 MCU, ADC, and low-level signal checklist
+references/knowledge_sources.md           Map of source-document themes to distilled checklist rules
 references/datasheet_summary_template.md  Datasheet summary template
 references/ic_review_template.md          IC instance review template
 references/power_path_review_template.md  Power-path review template
@@ -181,7 +190,11 @@ references/checklists/
   motor_driver.md
   connector_power.md
   dcdc.md
+  dcdc_bringup_test.md
   half_bridge_gate_drive.md
+  current_sensing.md
+  motor_control_foc.md
+  signal_power_integrity.md
   power_entry_inrush.md
   mcu_adc.md
   usb_c.md

@@ -13,6 +13,8 @@ Apply this checklist when the schematic contains an MCU, ADC, sensor analog fron
 
 - Divider values must keep ADC input voltage inside absolute maximum and recommended input range over worst-case sensor/input voltage.
 - ADC source impedance and RC filter settling time must be compatible with sampling time, input sampling capacitance, and required accuracy.
+- For SAR ADCs, check both the sampling capacitor charge kickback into the input capacitor and the final settling time through the source/filter resistance.
+- Sequential ADC channel sampling should consider worst-case previous-channel voltage; high source impedance can produce channel-to-channel memory errors.
 - Anti-alias filtering should be considered when sampled signals may contain frequency content above half the sampling rate.
 - Reference pins and analog supply pins must have datasheet-required filtering, decoupling, and grounding treatment.
 - Protection parts should be considered for external analog inputs, long cables, inductive environments, or user-accessible connectors.

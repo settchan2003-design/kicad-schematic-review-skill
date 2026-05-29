@@ -7,10 +7,12 @@ Apply this checklist when the schematic contains a switching regulator, buck, bo
 - Input capacitors must match datasheet value, voltage rating, ripple current, and placement guidance.
 - Output capacitors must match datasheet value, ESR/stability range, voltage rating, and ripple current.
 - Inductor value, saturation current, RMS current, DCR, and package must be checked against load current and switching current.
+- Inductor saturation current should be checked against the regulator current-limit or peak switch current, not only nominal load current; include short-circuit behavior when the datasheet exposes it.
 - Bootstrap, charge-pump, compensation, soft-start, bias, and internal-regulator capacitors must be present when required.
 - Feedback divider values must produce the intended output voltage using the datasheet equation.
 - For constant-on-time, hysteretic, or ripple-injection regulators, verify that the FB ripple generation method is intentional and matches the datasheet or application note. All-ceramic output capacitors can remove the ESR ripple needed for stable operation unless a Type III/ramp-injection or equivalent network is provided.
 - For Fly-Buck or coupled-inductor topologies, verify transformer/coupled-inductor turns ratio, isolation rating, rectifier voltage rating, primary and secondary output capacitors, Type III ripple requirement when specified, and secondary load regulation assumptions.
+- Soft-start, compensation, feed-forward, and frequency-setting parts should be checked against startup overshoot, transient load response, and switching-frequency expectations.
 
 ## Pins And States
 
@@ -28,6 +30,9 @@ Apply this checklist when the schematic contains a switching regulator, buck, bo
 - VCC, bootstrap, and charge-pump capacitors should be close to their IC pins with short, low-loop connections.
 - Feedback traces should be routed away from inductors, transformers, switch nodes, and other fast switching traces; if PCB evidence is unavailable, keep this as `manual_review`.
 - Switch-node copper should be only as large as needed and must not be tied to unnecessary planes or pours.
+- The inductor should be close to the SW pin, but the SW copper should balance current capacity against EMI and parasitic capacitance; do not enlarge it into unrelated copper.
+- Input-capacitor ground, output-capacitor ground, power ground, and exposed pad/thermal ground should form a short low-impedance power return where the datasheet layout shows it.
+- Thermal vias and solid copper should be reviewed for regulator ICs, power diodes/FETs, and hot inductors; thermal-relief spokes can be inappropriate for high-current/thermal paths.
 - For long input leads plus low-ESR ceramic input capacitors, check for damping or bulk capacitance that prevents VIN overshoot and input-filter instability.
 - If PCB layout is missing, layout-sensitive claims remain `manual_review`.
 

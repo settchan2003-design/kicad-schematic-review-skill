@@ -13,6 +13,8 @@ Apply this checklist when the schematic contains a half bridge, H-bridge, extern
 ## Gate Loop And Switching Control
 
 - Gate resistors must be present or intentionally omitted; separate turn-on/turn-off paths should be considered when switching speed, ringing, or shoot-through margin matters.
+- External gate resistance must account for driver pull-up/pull-down resistance, MOSFET internal gate resistance, target rise/fall time, allowed switching loss, and damping of the gate-loop resonance.
+- If ringing/overshoot is expected, increasing gate resistance, split turn-on/turn-off resistance, snubbers, slew-rate control, or layout changes should be evaluated as separate remedies.
 - Gate-to-source pulldown resistors should define the off state during reset, driver high impedance, connector unplug, or MCU boot.
 - Miller clamp, negative turn-off bias, or other crosstalk suppression should be considered for fast half bridges, SiC MOSFETs, high bus voltage, or high dv/dt operation.
 - Dead time, interlock, and shoot-through prevention must be explicit in the driver, controller, or firmware assumptions.
@@ -30,6 +32,7 @@ Apply this checklist when the schematic contains a half bridge, H-bridge, extern
 - Drain-source voltage rating must cover bus voltage, ringing, load dump/regeneration, and fault transients.
 - Current rating, SOA/pulse capability, RDS(on), package thermal resistance, and heatsinking/copper assumptions must match continuous and peak load current.
 - Phase-node snubbers, TVS/clamps, RC damping, or gate-speed limits should be considered when cable length, motor inductance, or switching ringing is unknown.
+- Switch-node ringing must be checked against MOSFET VDS, driver switch-node pin limits, bootstrap diode/capacitor stress, and EMI risk; measurement setup should not be mistaken for actual device stress.
 - Body diode or reverse-recovery behavior must be checked for synchronous rectification, dead time, and regenerative current paths.
 
 ## Source Notes
