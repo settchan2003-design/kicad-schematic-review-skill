@@ -12,6 +12,7 @@ This file records which design-document themes have been distilled into reusable
 | ADC performance and signal sampling/reconstruction notes | `checklists/mcu_adc.md`, `checklists/signal_power_integrity.md` | SAR ADC settling, source impedance, RC filter selection, anti-aliasing, channel sequencing, and measurement fidelity |
 | NexFET ringing, gate-resistor design, SiC half-bridge crosstalk | `checklists/half_bridge_gate_drive.md`, `checklists/signal_power_integrity.md` | Gate resistance, switching loss versus damping, common-source inductance, Miller/crosstalk, VGS/VDS stress, snubbers, and probing artifacts |
 | Signal and power integrity material plus project test reports | `checklists/signal_power_integrity.md`, `checklists/dcdc_bringup_test.md` | Return paths, termination, differential interfaces, decoupling, PDN assumptions, interface probing, clock quality, and bring-up evidence |
+| Littelfuse ESD guide, TI SLLA272D, TI SLVA689, TI SLVA477B | `schematic_rule_extraction_template.md`, `checklists/esd_protection_schematic.md`, `checklists/rs485_schematic.md`, `checklists/i2c_pullup_schematic.md`, `checklists/buck_power_stage_schematic.md` | Layout-free schematic rules for ESD/TVS selection, RS-485 termination/failsafe/loading, I2C pull-up bounds, and buck power-stage formulas |
 
 ## Maintenance Rule
 

@@ -73,7 +73,7 @@ Minimum bar for an actual review:
    - Read `pcb_status[]`; if a PCB is `is_effectively_empty`, keep trace width, copper, thermal, via, creepage/clearance, and EMI conclusions as `manual_review`.
    - Read `checklists[]` and load every file with `applies: true`.
    - The baseline checklist is `references/checklist_example.md`.
-   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `dcdc_bringup_test.md`, `half_bridge_gate_drive.md`, `current_sensing.md`, `motor_control_foc.md`, `signal_power_integrity.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
+   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `buck_power_stage_schematic.md`, `dcdc_bringup_test.md`, `half_bridge_gate_drive.md`, `current_sensing.md`, `i2c_pullup_schematic.md`, `rs485_schematic.md`, `esd_protection_schematic.md`, `motor_control_foc.md`, `signal_power_integrity.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
    - Project-local checklists named `review_checklist.md`, `schematic_checklist.md`, `hardware_checklist.md`, `checklist.md`, or `*checklist*.md` are discovered automatically by `build_review_context.py`.
    - If project-local checklist items conflict with the baseline or domain checklist, apply the stricter requirement unless the user explicitly says otherwise.
    - Preserve checklist pass/fail/manual-review results in the per-instance review files and final report.
@@ -83,6 +83,12 @@ Minimum bar for an actual review:
    - Accept HTTP(S) URLs, absolute paths, and project-relative paths.
    - If missing, inspect custom fields such as `MPN`, `Manufacturer Part Number`, `Part Number`, `LCSC`, `Supplier Part`, and `URL`.
    - If still missing, mark as `manual_review`.
+
+5a. When converting a datasheet or application note into a reusable schematic checklist, use `references/schematic_rule_extraction_template.md`.
+   - Extract only schematic-checkable rules under Net And Pin Logic, Required Topology, Component Parameter Bounds, and Absolute Maximum Ratings.
+   - Use checkbox items.
+   - Exclude PCB, physical placement, routing, copper, via, geometry, and thermal-spreading guidance from these schematic-only checklists.
+   - Do not use vague wording such as "appropriate", "reasonable", or "as needed"; turn source guidance into measurable values, formulas, required states, or `manual_review`.
 
 6. Create or update `datasheet_cache/<part>.summary.md`.
    - Use `references/datasheet_summary_template.md`.
