@@ -70,7 +70,7 @@ Minimum bar for an actual review:
    - Read `schematic_texts[]`; treat power/current annotations such as `30W`, `2A`, `24V`, `motor`, or `heater` as design-intent evidence that must be cross-checked.
    - Read `checklists[]` and load every file with `applies: true`.
    - The baseline checklist is `references/checklist_example.md`.
-   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, and `dcdc.md`.
+   - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `half_bridge_gate_drive.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
    - Project-local checklists named `review_checklist.md`, `schematic_checklist.md`, `hardware_checklist.md`, `checklist.md`, or `*checklist*.md` are discovered automatically by `build_review_context.py`.
    - If project-local checklist items conflict with the baseline or domain checklist, apply the stricter requirement unless the user explicitly says otherwise.
    - Preserve checklist pass/fail/manual-review results in the per-instance review files and final report.
@@ -93,6 +93,8 @@ Minimum bar for an actual review:
    - Expand every physical pin for the reviewed package.
    - Capture required/allowed connection, required external parts, recommended values, placement/layout notes, unused-pin rules, and evidence.
    - For motor drivers and power ICs, explicitly capture bulk capacitance, bootstrap/charge-pump capacitors, current-sense parts, snubbers, TVS/ESD, thermal pad guidance, and supply limits.
+   - For COT/hysteretic regulators, explicitly capture the required FB ripple method, ESR/ripple assumptions, ripple-injection network, and layout-sensitive feedback routing rules.
+   - For half bridges, gate drivers, and SiC/FET power stages, explicitly capture gate-drive voltage, bootstrap parts, gate resistors, pulldowns, dead time/interlock assumptions, Miller/crosstalk suppression, and absolute maximum VGS limits.
    - For connectors, terminals, fuses, switches, cables, and current-carrying passives, explicitly capture current rating, voltage rating, wire gauge, contact resistance, temperature range, pitch/package, and derating notes.
    - If PDF text extraction is unavailable, tell the user to install `pypdf` or provide extracted datasheet text, then continue with available schematic-only checks.
    - Mark the summary status as `verified` only after pin table, recommended operating conditions, application circuit, and package-specific notes were checked.
@@ -107,6 +109,7 @@ Minimum bar for an actual review:
    - Identify power entry, motor outputs, load connectors, fuses, switches, sense resistors, and terminal blocks.
    - Estimate current from known or user-provided power: `I = P / V`, then add efficiency and transient/startup margin when relevant.
    - Compare estimated continuous and peak current against connector/contact/wire/fuse/resistor ratings.
+   - If large downstream capacitance, battery input, relay/SSR, hot-swap, or motor-controller bus evidence exists, estimate or request inrush/precharge requirements separately from steady-state current.
    - Flag any path with no derating margin, unknown rating, or rating below expected current.
    - For motor outputs, consider current limit and startup/stall current, not only average electrical power.
 

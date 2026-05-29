@@ -33,8 +33,11 @@ For example, if a schematic contains the free-text annotation `30W DC-Motor` and
 - IC supply, ground, enable, reset, boot, mode, VREF, ISEN, fault, and exposed-pad pins
 - Required datasheet external parts such as decoupling capacitors, bulk capacitors, bootstrap capacitors, charge-pump capacitors, current-sense resistors, pull-ups, TVS/ESD parts, clocks, and feedback networks
 - Motor drivers and H-bridges: VM capacitance, current limit, sense resistor power, PowerPAD requirements, and motor output connectors
-- DCDC converters: input/output capacitors, inductors, feedback dividers, compensation, BOOT/SW/EN/PGOOD pins
+- Half bridges and external power stages: gate-drive supply, bootstrap network, gate resistors, pulldowns, Miller/crosstalk risks, dead time, and VGS limits
+- DCDC converters: input/output capacitors, inductors, feedback dividers, compensation, BOOT/SW/EN/PGOOD pins, COT ripple-generation requirements, and layout-sensitive feedback/SW nodes
 - Connectors and terminals: current, wire gauge, temperature, paralleled contacts, supply path, and return path
+- Power entry and inrush: battery/DC-bus inputs, relays/SSRs, precharge, large downstream capacitance, fuses, and hot-swap behavior
+- MCU/ADC basics: decoupling, VCAP/reference pins, reset/boot states, ADC source impedance, RC settling, anti-alias filtering, and test access
 - Schematic design intent from text annotations, such as power, voltage, current, `motor`, `heater`, and `load`
 
 ## What It Does Not Prove
@@ -144,6 +147,9 @@ references/checklist_example.md           Baseline checklist
 references/checklists/motor_driver.md     Motor-driver checklist
 references/checklists/connector_power.md  Connector and power-path checklist
 references/checklists/dcdc.md             DCDC checklist
+references/checklists/half_bridge_gate_drive.md  Half-bridge and gate-drive checklist
+references/checklists/power_entry_inrush.md      Power-entry, inrush, and precharge checklist
+references/checklists/mcu_adc.md                 MCU, ADC, and low-level signal checklist
 references/datasheet_summary_template.md  Datasheet summary template
 references/ic_review_template.md          IC instance review template
 references/power_path_review_template.md  Power-path review template
@@ -175,10 +181,12 @@ references/checklists/
   motor_driver.md
   connector_power.md
   dcdc.md
+  half_bridge_gate_drive.md
+  power_entry_inrush.md
+  mcu_adc.md
   usb_c.md
   can.md
   rs485.md
-  mcu.md
   ldo.md
 ```
 
@@ -225,7 +233,7 @@ Templates shape report quality:
 
 ### Recommended Growth Path
 
-1. Add `usb_c.md`, `can.md`, `rs485.md`, `ldo.md`, and `mcu.md` checklists.
+1. Add `usb_c.md`, `can.md`, `rs485.md`, `ldo.md`, and `battery_charger.md` checklists.
 2. Add auto-trigger rules for those checklists in `build_review_context.py`.
 3. Add one or two real KiCad projects as regression examples for each circuit class.
 4. Script common high-severity checks, such as missing VM caps, connector current exceeded, and VREF out of range.
