@@ -14,6 +14,7 @@ Apply this checklist when the schematic contains a battery input, DC bus, relay,
 - If large downstream capacitors or multiple motor controllers are present, estimate worst-case inrush from bus voltage, initial capacitor voltage, capacitance, source impedance, and any series resistance.
 - A precharge, soft-start, hot-swap, NTC, current-limited switch, or staged-enable strategy should be present when inrush can exceed connector, relay, MOSFET, fuse, or battery limits.
 - Precharge resistors must be checked for pulse energy, average power during repeated startup, voltage rating, and bypass timing.
+- Bleed/discharge resistors must be checked for steady-state dissipation, voltage rating, discharge time, and user-accessible residual voltage assumptions.
 - Bypass MOSFETs/relays must not close until downstream capacitance is sufficiently charged; the control circuit should fail safe if timing or sensing fails.
 - Discharge paths and residual bus voltage behavior should be documented when large capacitors remain charged after power-off.
 

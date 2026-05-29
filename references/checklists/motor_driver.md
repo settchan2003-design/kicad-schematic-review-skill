@@ -24,6 +24,7 @@ Apply this checklist when the schematic contains a motor driver, H-bridge, gate 
 - Input pins must have defined controller voltage domains and safe startup/reset states.
 - Enable, sleep, mode, brake/coast, and fault pins must have intentional states.
 - Current-sense resistors must include value, package, power rating, tolerance, and pulse capability.
+- Use the actual resistor datasheet when available. As a rough default only, common chip-resistor package power ratings are: 0201 1/20 W, 0402 1/16 W, 0603 1/10 W, 0805 1/8 W, 1206 1/4 W, 1210 1/3 W, 1812 1/2 W, 2010 3/4 W, 2512 1 W.
 - Current-limit equations from the datasheet must be evaluated using schematic resistor values and reference voltages.
 - Sense traces should be reviewed for Kelvin routing when current accuracy matters.
 - For integrated current-sense amplifiers, check required filtering/decoupling on SPx/SNx or equivalent sense pins and preserve differential symmetry where the datasheet expects it.

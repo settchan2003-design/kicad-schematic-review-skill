@@ -1,4 +1,6 @@
-# Schematic Review Checklist Example
+# Baseline Schematic Review Checklist
+
+Apply this baseline checklist to every schematic review. Keep domain-specific rules in `references/checklists/*.md`.
 
 ## Component Fields
 
@@ -38,23 +40,3 @@
 - Components excluded from BOM or board should be intentional.
 - Footprints should match package and assembly intent.
 - Test points should be considered for important rails and programming/debug signals.
-
-## Driver
-
-- Bulk capacitor and bypass capacitor are necessary for every driver
-- Sample resistor should have proper footprint to afford the power:
-0201:1/20W | 0402:1/16W | 0603:1/10W | 0805:1/8W | 1206:1/4W | 1210:1/3W | 1812:1/2W | 2010:3/4W | 2512:1W 
-- Ensure the input voltage is in the range
-- 
-
-## Connector
-
-- Ensure the connector has sufficient current margin
-
-## MCU
-
-- 
-
-## DCDC IC
-
-- 

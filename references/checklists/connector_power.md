@@ -16,6 +16,7 @@ Apply this checklist when a connector, terminal block, fuse, switch, cable, supp
 - Power entry must show polarity, expected voltage, return path, and protection strategy.
 - Supply and return contacts should have matched current capacity.
 - Fuses, switches, shunts, and protection parts must have current, voltage, power, and interrupt ratings where applicable.
+- Shunt, precharge, bleed, load, and current-limit resistors must be checked for resistance value, package power rating, pulse energy, voltage rating, tolerance, and temperature coefficient where relevant.
 - Connector footprints must match the exact series/pitch/current class assumed by the datasheet.
 
 ## Evidence Gaps
