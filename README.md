@@ -17,8 +17,11 @@ It helps an agent:
 
 - Inventory KiCad project files such as `.kicad_pro`, `.kicad_sch`, and `.kicad_pcb`
 - Extract components, pins, nets, labels, no-connect markers, and schematic free-text annotations
+- Infer first-pass design intent from annotations and rails, such as `30W` with `+24V` becoming a current-budget hint
 - Identify high-risk review targets such as ICs, drivers, regulators, connectors, terminals, fuses, and sense resistors
 - Cache datasheets from component `Datasheet` fields and extract searchable text
+- Detect cached supplier HTML wrappers that are not real datasheet PDFs
+- Report whether PCB files contain placement/routing evidence or are effectively empty
 - Build keyword maps for faster datasheet reading
 - Review each IC with a pin-by-pin checklist
 - Review connectors, motors, loads, supply inputs, sense resistors, and current paths
@@ -105,15 +108,19 @@ Build compact review context:
 python scripts/build_review_context.py /path/to/KiCadProject --pretty
 ```
 
+The context includes `design_intent`, `datasheet_cache_status`, and `pcb_status` sections. These help the reviewer catch common misses: schematic text that implies current, supplier cache files that are HTML wrappers, and PCB files that are too empty for layout claims.
+
 Cache and extract a datasheet:
 
 ```bash
 python scripts/datasheet_tool.py fetch "https://example.com/part.pdf" --cache-dir /path/to/KiCadProject/datasheet_cache
 python scripts/datasheet_tool.py extract /path/to/KiCadProject/datasheet_cache/part.pdf --out /path/to/KiCadProject/datasheet_cache/part.datasheet.txt
 python scripts/datasheet_tool.py keywords /path/to/KiCadProject/datasheet_cache/part.datasheet.txt --out /path/to/KiCadProject/datasheet_cache/part.keywords.md
+python scripts/datasheet_tool.py inspect /path/to/KiCadProject/datasheet_cache/part.pdf --pretty
 ```
 
 `datasheet_tool.py fetch` handles a common supplier-site problem: a URL may look like a `.pdf` but return an HTML wrapper page. The tool attempts to resolve canonical links, PDF links, and supplier-page links to cache the real PDF when possible.
+`datasheet_tool.py inspect` classifies an existing cached file as PDF, HTML wrapper, text, or unknown and lists PDF links found in an HTML wrapper.
 
 ## Review Outputs
 

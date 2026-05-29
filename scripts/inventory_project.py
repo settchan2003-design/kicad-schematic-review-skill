@@ -31,6 +31,13 @@ IGNORED_DIR_NAMES = {
 }
 
 
+REVIEW_ARTIFACT_NAMES = {
+    "schematic_review.md",
+    "review.md",
+    "hardware_review.md",
+}
+
+
 def find_project_root(path: Path) -> Path:
     path = path.resolve()
     if path.is_file():
@@ -38,6 +45,18 @@ def find_project_root(path: Path) -> Path:
             return path.parent
         return path.parent
     return path
+
+
+def is_local_datasheet_candidate(path: Path) -> bool:
+    """Avoid reporting review/checklist markdown as datasheet fallback material."""
+    if path.suffix.lower() not in DATASHEET_EXTENSIONS:
+        return False
+    name = path.name.lower()
+    if name in REVIEW_ARTIFACT_NAMES:
+        return False
+    if "checklist" in name or "review" in name:
+        return False
+    return True
 
 
 def normalized_tokens(text: str) -> set[str]:
@@ -82,8 +101,7 @@ def discover(root: Path) -> dict[str, Any]:
     local_datasheets = sorted(
         str(p)
         for p in files
-        if p.is_file()
-        and p.suffix.lower() in DATASHEET_EXTENSIONS
+        if p.is_file() and is_local_datasheet_candidate(p)
     )
 
     return {

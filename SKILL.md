@@ -68,6 +68,9 @@ Minimum bar for an actual review:
 4. Build review context and load applicable checklists.
    - Run `scripts/build_review_context.py <project> --pretty`.
    - Read `schematic_texts[]`; treat power/current annotations such as `30W`, `2A`, `24V`, `motor`, or `heater` as design-intent evidence that must be cross-checked.
+   - Read `design_intent.current_estimates[]` when present. These are computed hints from schematic text and voltage rails, not proof; use them to seed connector/current-path calculations and still ask for continuous, startup, and stall current.
+   - Read `datasheet_cache_status[]`; if a cached source is `html_wrapper`, do not claim the rating or pinout is verified until the actual PDF/drawing is resolved.
+   - Read `pcb_status[]`; if a PCB is `is_effectively_empty`, keep trace width, copper, thermal, via, creepage/clearance, and EMI conclusions as `manual_review`.
    - Read `checklists[]` and load every file with `applies: true`.
    - The baseline checklist is `references/checklist_example.md`.
    - Domain checklists live under `references/checklists/`, including `motor_driver.md`, `connector_power.md`, `dcdc.md`, `dcdc_bringup_test.md`, `half_bridge_gate_drive.md`, `current_sensing.md`, `motor_control_foc.md`, `signal_power_integrity.md`, `power_entry_inrush.md`, and `mcu_adc.md`.
@@ -86,6 +89,7 @@ Minimum bar for an actual review:
    - If the project has a local `.venv`, prefer `.venv/bin/python` when running datasheet tools so PDF parsing dependencies are available.
    - Use `scripts/datasheet_tool.py fetch <datasheet-url-or-path> --cache-dir <project>/datasheet_cache` to cache URL-based datasheets when needed. The fetch command reuses cached files first; add `--offline` to fail instead of downloading on a cache miss, or `--verbose` to show cache-hit/download status on stderr.
    - If a supplier datasheet URL caches an HTML wrapper instead of a PDF, rerun fetch without `--offline`; the tool attempts to resolve linked/canonical PDF URLs and returns the resolved PDF path when found.
+   - Use `scripts/datasheet_tool.py inspect <cached-file> --pretty` when a cache file has a misleading extension or a supplier wrapper is suspected; inspect reports whether the source is PDF, HTML wrapper, text, or unknown and lists linked PDF candidates when present.
    - Use `scripts/datasheet_tool.py extract <cached-pdf-or-local-file> --out <project>/datasheet_cache/<part>.datasheet.txt` to produce searchable text when a PDF text extractor is available.
    - If the cached file is HTML, `extract` produces readable HTML text; use it only as supplier-page evidence unless it contains real rating tables or links to the actual PDF/drawing.
    - Use `scripts/datasheet_tool.py keywords <text-file> --out <project>/datasheet_cache/<part>.keywords.md` to create a compact reading map before summarizing.
@@ -108,6 +112,7 @@ Minimum bar for an actual review:
 8. Review current-carrying paths before final sign-off.
    - Identify power entry, motor outputs, load connectors, fuses, switches, sense resistors, and terminal blocks.
    - Estimate current from known or user-provided power: `I = P / V`, then add efficiency and transient/startup margin when relevant.
+   - Prefer `design_intent.current_estimates[]` as the first-pass current budget when it exists, but state its assumptions and recompute manually if multiple rails or ambiguous load annotations exist.
    - Compare estimated continuous and peak current against connector/contact/wire/fuse/resistor ratings.
    - If large downstream capacitance, battery input, relay/SSR, hot-swap, or motor-controller bus evidence exists, estimate or request inrush/precharge requirements separately from steady-state current.
    - Flag any path with no derating margin, unknown rating, or rating below expected current.

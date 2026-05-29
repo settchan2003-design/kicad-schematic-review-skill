@@ -18,6 +18,7 @@ import argparse
 import html
 from html.parser import HTMLParser
 import hashlib
+import json
 import re
 import shutil
 import ssl
@@ -319,6 +320,42 @@ def command_keywords(args: argparse.Namespace) -> None:
         print(result)
 
 
+def inspect_datasheet(path: Path, base_url: str = "") -> dict[str, object]:
+    if not path.exists():
+        return {
+            "path": str(path),
+            "exists": False,
+            "size_bytes": 0,
+            "type": "missing",
+            "warning": "File does not exist.",
+        }
+    data = path.read_bytes()
+    if looks_like_pdf(data):
+        file_type = "pdf"
+    elif looks_like_html(data):
+        file_type = "html_wrapper"
+    elif path.suffix.lower() in {".txt", ".md"}:
+        file_type = "text"
+    else:
+        file_type = "unknown"
+    result: dict[str, object] = {
+        "path": str(path),
+        "exists": path.exists(),
+        "size_bytes": path.stat().st_size,
+        "type": file_type,
+    }
+    if file_type == "html_wrapper":
+        result["pdf_links"] = find_pdf_links(data, base_url or path.as_uri())
+        result["warning"] = "This file is HTML, not a verified datasheet PDF."
+    return result
+
+
+def command_inspect(args: argparse.Namespace) -> None:
+    result = inspect_datasheet(args.path, base_url=args.base_url or "")
+    indent = 2 if args.pretty else None
+    print(json.dumps(result, ensure_ascii=False, indent=indent))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Datasheet helper for KiCAD schematic review")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -354,6 +391,12 @@ def build_parser() -> argparse.ArgumentParser:
     keyword_parser.add_argument("--keyword", action="append", help="Keyword to search; can be repeated")
     keyword_parser.add_argument("--context-chars", type=int, default=650)
     keyword_parser.set_defaults(func=command_keywords)
+
+    inspect_parser = subparsers.add_parser("inspect", help="Classify a cached datasheet file")
+    inspect_parser.add_argument("path", type=Path)
+    inspect_parser.add_argument("--base-url", help="Base URL used to resolve PDF links in HTML wrappers")
+    inspect_parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
+    inspect_parser.set_defaults(func=command_inspect)
 
     return parser
 

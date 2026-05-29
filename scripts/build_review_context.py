@@ -16,6 +16,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from extract_kicad_sch import extract  # noqa: E402
 from inventory_project import discover  # noqa: E402
+from datasheet_tool import looks_like_html, looks_like_pdf, safe_name  # noqa: E402
 
 
 def cache_stem(value: str, datasheet: str) -> str:
@@ -106,6 +107,173 @@ def checklist_entry(path: Path, source: str, applies: bool, reason: str) -> dict
         "item_count": len(items),
         "items": items,
     }
+
+
+def positive_voltage_from_net(name: str) -> float | None:
+    match = re.fullmatch(r"\+?(\d+(?:\.\d+)?)v", name.strip().lower())
+    if not match:
+        return None
+    return float(match.group(1))
+
+
+def extract_numeric_annotations(schematic_texts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    annotations: list[dict[str, Any]] = []
+    patterns = [
+        ("power_w", r"(?<![A-Za-z0-9.])(\d+(?:\.\d+)?)\s*w\b"),
+        ("current_a", r"(?<![A-Za-z0-9.])(\d+(?:\.\d+)?)\s*a\b"),
+        ("voltage_v", r"(?<![A-Za-z0-9.])(\d+(?:\.\d+)?)\s*v\b"),
+    ]
+    for item in schematic_texts:
+        text = str(item.get("text", ""))
+        lower = text.lower()
+        for kind, pattern in patterns:
+            for match in re.finditer(pattern, lower):
+                annotations.append(
+                    {
+                        "kind": kind,
+                        "value": float(match.group(1)),
+                        "text": text,
+                        "schematic_file": item.get("schematic_file", ""),
+                        "position": item.get("position"),
+                    }
+                )
+    return annotations
+
+
+def infer_motor_load_count(named_nets: list[dict[str, Any]], components: list[dict[str, Any]]) -> int:
+    motor_prefixes: set[str] = set()
+    for net in named_nets:
+        name = str(net.get("name", ""))
+        match = re.match(r"^(motor[^+-]*)([+-])$", name, flags=re.IGNORECASE)
+        if match:
+            motor_prefixes.add(match.group(1).lower())
+    if motor_prefixes:
+        return len(motor_prefixes)
+    driver_count = sum(
+        1
+        for component in components
+        if "motor" in " ".join(
+            str(component.get(key, "")) for key in ["lib_id", "value", "description"]
+        ).lower()
+        and str(component.get("reference", "")).startswith("U")
+    )
+    return max(1, driver_count)
+
+
+def build_design_intent(
+    components: list[dict[str, Any]],
+    named_nets: list[dict[str, Any]],
+    schematic_texts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    annotations = extract_numeric_annotations(schematic_texts)
+    rails = [
+        {"name": net.get("name", ""), "voltage_v": voltage}
+        for net in named_nets
+        for voltage in [positive_voltage_from_net(str(net.get("name", "")))]
+        if voltage is not None
+    ]
+    positive_rails = [rail["voltage_v"] for rail in rails if rail["voltage_v"] > 0]
+    selected_voltage = max(positive_rails) if positive_rails else None
+    motor_load_count = infer_motor_load_count(named_nets, components)
+
+    current_estimates: list[dict[str, Any]] = []
+    for annotation in annotations:
+        if annotation["kind"] != "power_w" or selected_voltage is None:
+            continue
+        per_load_current = annotation["value"] / selected_voltage
+        load_count = motor_load_count if "motor" in str(annotation.get("text", "")).lower() else 1
+        current_estimates.append(
+            {
+                "basis": annotation,
+                "voltage_v": selected_voltage,
+                "load_count": load_count,
+                "per_load_current_a": per_load_current,
+                "total_current_a": per_load_current * load_count,
+                "assumption": (
+                    "Computed from schematic power annotation and highest positive voltage rail; "
+                    "startup/stall/transient current is not included."
+                ),
+            }
+        )
+
+    return {
+        "annotations": annotations,
+        "voltage_rails": rails,
+        "inferred_motor_load_count": motor_load_count,
+        "current_estimates": current_estimates,
+    }
+
+
+def classify_cached_file(path: Path) -> str:
+    if not path.exists() or path.stat().st_size == 0:
+        return "missing"
+    if path.suffix.lower() in {".txt", ".md"}:
+        return "text"
+    data = path.read_bytes()[:4096]
+    if looks_like_pdf(data):
+        return "pdf"
+    if looks_like_html(data):
+        return "html_wrapper"
+    return "unknown"
+
+
+def datasheet_cache_status(datasheet_links: list[dict[str, Any]], cache_dir: Path) -> list[dict[str, Any]]:
+    statuses: list[dict[str, Any]] = []
+    for link in datasheet_links:
+        source = str(link.get("datasheet", ""))
+        cached_source = cache_dir / safe_name(source)
+        source_type = classify_cached_file(cached_source)
+        summary_path = Path(str(link.get("summary_path", "")))
+        text_path = Path(str(link.get("text_path", "")))
+        keywords_path = Path(str(link.get("keywords_path", "")))
+        warnings: list[str] = []
+        if source_type == "html_wrapper":
+            warnings.append("Cached source is HTML, not a resolved datasheet PDF.")
+        if not summary_path.exists():
+            warnings.append("No datasheet summary file found at the expected path.")
+        statuses.append(
+            {
+                "reference": link.get("reference", ""),
+                "value": link.get("value", ""),
+                "datasheet": source,
+                "cached_source_path": str(cached_source),
+                "cached_source_type": source_type,
+                "summary_exists": summary_path.exists(),
+                "text_exists": text_path.exists(),
+                "keywords_exists": keywords_path.exists(),
+                "warnings": warnings,
+            }
+        )
+    return statuses
+
+
+def pcb_status(pcb_files: list[str]) -> list[dict[str, Any]]:
+    statuses: list[dict[str, Any]] = []
+    for pcb_file in pcb_files:
+        path = Path(pcb_file)
+        text = path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+        counts = {
+            "footprints": len(re.findall(r"\(footprint\b", text)),
+            "segments": len(re.findall(r"\(segment\b", text)),
+            "vias": len(re.findall(r"\(via\b", text)),
+            "zones": len(re.findall(r"\(zone\b", text)),
+        }
+        statuses.append(
+            {
+                "file": pcb_file,
+                "exists": path.exists(),
+                "line_count": len(text.splitlines()) if text else 0,
+                "counts": counts,
+                "is_effectively_empty": path.exists() and not any(counts.values()),
+                "review_note": (
+                    "PCB has no placed/routed evidence; trace width, thermal, copper, via, "
+                    "clearance, and EMI checks must remain manual_review."
+                    if path.exists() and not any(counts.values())
+                    else ""
+                ),
+            }
+        )
+    return statuses
 
 
 def discover_checklists(
@@ -426,6 +594,8 @@ def build_context(project: Path) -> dict[str, Any]:
         named_nets,
         schematic_texts,
     )
+    design_intent = build_design_intent(components, named_nets, schematic_texts)
+    cache_dir = Path(inventory["suggested_output_dirs"]["datasheet_cache"])
 
     return {
         "project_root": inventory["project_root"],
@@ -435,8 +605,11 @@ def build_context(project: Path) -> dict[str, Any]:
         "current_critical_candidates": current_critical_candidates,
         "named_nets": named_nets,
         "schematic_texts": schematic_texts,
+        "design_intent": design_intent,
         "checklists": checklists,
         "datasheet_links": datasheet_links,
+        "datasheet_cache_status": datasheet_cache_status(datasheet_links, cache_dir),
+        "pcb_status": pcb_status(inventory["pcb_files"]),
         "suggested_output_dirs": inventory["suggested_output_dirs"],
     }
 
